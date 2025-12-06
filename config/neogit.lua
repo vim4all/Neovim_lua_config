@@ -1,7 +1,3 @@
--- ======================================
--- NEOGIT CONFIGURATION
--- ======================================
-
 local neogit = require("neogit")
 
 neogit.setup({

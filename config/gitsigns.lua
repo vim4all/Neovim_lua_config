@@ -1,7 +1,3 @@
--- ======================================
--- GITSIGNS CONFIGURATION
--- ======================================
-
 require("gitsigns").setup({
     signs = {
         add          = { text = "│" },

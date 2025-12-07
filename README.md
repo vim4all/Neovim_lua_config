@@ -5,6 +5,8 @@ setup provides modern UI enhancements, LSP support, Git integration,
 Treesitter, debugging, file tree navigation, and more. This README describes
 the **exact structure and plugins included** in this repository.
 
+![screenshot](images/preview.png)
+
 ---
 
 ## 📁 Directory Structure

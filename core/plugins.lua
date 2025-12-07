@@ -35,4 +35,7 @@ Plug('lervag/vimtex')
 Plug('nvim-treesitter/nvim-treesitter', { ['do'] = ':TSUpdate' })
 Plug('lukas-reineke/indent-blankline.nvim')
 
+-- Programming 
+Plug ('wakatime/vim-wakatime')
+
 vim.call('plug#end')

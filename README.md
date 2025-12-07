@@ -76,6 +76,7 @@ Below is a description of all plugins used:
 
 ### 🧠 **LSP / Programming**
 - [ ] TODO
+- **Wakatime** — programming time analyzer  
 
 ### 🐞 **Debugging**
 - **nvim-dap** — DAP debugging

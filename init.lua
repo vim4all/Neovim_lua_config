@@ -16,6 +16,7 @@ require("core.keymaps")
 require("core.plugins")
 
 -- Plugin configs
+require("config.barbar")
 require("config.catppuccin")
 require("config.nvim-tree")
 require("config.lualine")

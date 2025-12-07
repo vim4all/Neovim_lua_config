@@ -11,24 +11,25 @@ the **exact structure and plugins included** in this repository.
 
 ```C
 nvim/
-├── .gitignore
+│
 ├── init.lua
-├── core/
+├─+ core/
 │ ├── keymaps.lua
 │ ├── options.lua
 │ └── plugins.lua
-└── config/
-├── catppuccin.lua
-├── dap.lua
-├── gitsigns.lua
-├── indent.lua
-├── lualine.lua
-├── neogit.lua
-├── nvim-tree.lua
-├── telescope.lua
-├── treesitter.lua
-├── vimtex.lua
-└── whichkey.lua
+└─+ config/
+  ├── barbar.lua
+  ├── catppuccin.lua
+  ├── dap.lua
+  ├── gitsigns.lua
+  ├── indent.lua
+  ├── lualine.lua
+  ├── neogit.lua
+  ├── nvim-tree.lua
+  ├── telescope.lua
+  ├── treesitter.lua
+  ├── vimtex.lua
+  └── whichkey.lua
 ```
 
 ### **`init.lua`**

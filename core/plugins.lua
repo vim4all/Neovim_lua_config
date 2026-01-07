@@ -17,6 +17,7 @@ Plug('nvim-lua/plenary.nvim')
 Plug('nvim-telescope/telescope-fzf-native.nvim', { ['do'] = 'make' })
 Plug('nvim-telescope/telescope-file-browser.nvim')
 Plug('ThePrimeagen/git-worktree.nvim')
+Plug('folke/todo-comments.nvim')
 
 -- Autocomplete
 Plug('neovim/nvim-lspconfig')

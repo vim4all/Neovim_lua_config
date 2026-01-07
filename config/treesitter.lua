@@ -1,8 +1,4 @@
-local ok, ts_configs = pcall(require, "nvim-treesitter.configs")
-if not ok then
-  vim.notify("nvim-treesitter not found!", vim.log.levels.WARN)
-  return
-end
+local ok, ts_configs = pcall(require, "nvim-treesitter")
 
 ts_configs.setup({
     ensure_installed = { "python", "lua", "c", "markdown", "vim" }, -- languages

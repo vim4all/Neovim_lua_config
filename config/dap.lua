@@ -1,13 +1,15 @@
 local dap_ok, dap = pcall(require, "dap")
 if not dap_ok then return end
 
+require("dap").set_log_level("DEBUG")
+
 -- ================================
 -- Python Adapter
 -- ================================
 dap.adapters.python = {
-    type = 'executable',
-    command = vim.g.python3_host_prog,
-    args = { '-m', 'debugpy.adapter' },
+  type = "executable",
+  command = "python3",
+  args = { "-m", "debugpy.adapter" },
 }
 
 dap.configurations.python = {
@@ -40,7 +42,7 @@ dap.adapters.cpp = {
 
 dap.configurations.cpp = {
     {
-        name = "(gdb) Launch",
+        name = "(gdb) Launch MY",
         type = "cpp",
         request = "launch",
         program = vim.fn.getcwd() .. "/out/build/debug-x86/ecs-02-gui",
@@ -61,6 +63,29 @@ dap.configurations.cpp = {
         },
     },
 }
+
+
+dap.adapters.cppdbg = {
+  type = "executable",
+  command = "/usr/bin/gdb",
+  args = { "--interpreter=dap" },
+}
+
+dap.configurations.cpp = {
+  {
+    name = "(gdb) Launch",
+    type = "cppdbg",
+    request = "launch",
+    program = function()
+      return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/out/build/debug-x86/ecs-02-gui", "file")
+    end,
+    cwd = vim.fn.expand("${workspaceFolder}/deb-package/opt/arex/ecs-02-gui"),
+    stopAtEntry = false,
+  },
+}
+
+
+dap.configurations.c = dap.configurations.cpp
 
 -- ================================
 -- Sign Icons

@@ -3,8 +3,8 @@ if dap_ok then
 
     dap.adapters.python = {
         type = 'executable',
-        command = vim.g.python3_host_prog,
-        args = { '-m', 'debugpy.adapter' },
+          command = 'python',
+          args = { '-m', 'debugpy.adapter' },
     }
 
     dap.configurations.python = {

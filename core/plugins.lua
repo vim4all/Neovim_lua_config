@@ -1,52 +1,144 @@
-local Plug = vim.fn['plug#']
-vim.call('plug#begin', '~/AppData/Local/nvim/plugged')
+-- Bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git", "clone", "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable",
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
 
--- UI
-Plug('folke/which-key.nvim')
-Plug('nvim-tree/nvim-web-devicons')
-Plug('nvim-lualine/lualine.nvim')
-Plug('romgrk/barbar.nvim')
-Plug('catppuccin/nvim', { as = 'catppuccin' })
+require("lazy").setup({
 
--- File tree
-Plug('nvim-tree/nvim-tree.lua')
+  -- ── Dependencies ──────────────────────────────────────────────────────
+  { "nvim-lua/plenary.nvim",       lazy = true },
+  { "nvim-tree/nvim-web-devicons", lazy = true },
 
--- Telescope
-Plug('nvim-telescope/telescope.nvim')
-Plug('nvim-lua/plenary.nvim')
-Plug('nvim-telescope/telescope-fzf-native.nvim', { ['do'] = 'make' })
-Plug('nvim-telescope/telescope-file-browser.nvim')
-Plug('ThePrimeagen/git-worktree.nvim')
-Plug('folke/todo-comments.nvim')
+  -- ── Colorscheme ───────────────────────────────────────────────────────
+  {
+    "catppuccin/nvim",
+    name     = "catppuccin",
+    priority = 1000,
+    lazy     = false,
+    config   = function() require("config.catppuccin") end,
+  },
 
--- Autocomplete
-Plug('neovim/nvim-lspconfig')
-Plug('hrsh7th/nvim-cmp')
-Plug('hrsh7th/cmp-nvim-lsp')
-Plug('hrsh7th/cmp-buffer')
-Plug('hrsh7th/cmp-path')
-Plug('hrsh7th/cmp-cmdline')
-Plug('hrsh7th/cmp-vsnip')
-Plug('hrsh7th/vim-vsnip')
+  -- ── UI ────────────────────────────────────────────────────────────────
+  {
+    "nvim-lualine/lualine.nvim",
+    event  = "VeryLazy",
+    config = function() require("config.lualine") end,
+  },
+  {
+    "romgrk/barbar.nvim",
+    event        = "VeryLazy",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config       = function() require("config.barbar") end,
+  },
+  {
+    "folke/which-key.nvim",
+    event  = "VeryLazy",
+    config = function() require("config.whichkey") end,
+  },
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    event  = "BufReadPost",
+    config = function() require("config.indent") end,
+  },
 
--- Git signs
-Plug('lewis6991/gitsigns.nvim')
-Plug('TimUntersberger/neogit')
+  -- ── File tree ─────────────────────────────────────────────────────────
+  {
+    "nvim-tree/nvim-tree.lua",
+    cmd    = "NvimTreeToggle",
+    keys   = { { "<Leader>e", "<cmd>NvimTreeToggle<CR>", desc = "Toggle file tree" } },
+    config = function() require("config.nvim-tree") end,
+  },
 
--- DAP
-Plug('mfussenegger/nvim-dap')
-Plug('nvim-neotest/nvim-nio')
-Plug('rcarriga/nvim-dap-ui')
-Plug('theHamsta/nvim-dap-virtual-text')
+  -- ── Telescope ─────────────────────────────────────────────────────────
+  {
+    "nvim-telescope/telescope.nvim",
+    event  = "VeryLazy",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+      "nvim-telescope/telescope-file-browser.nvim",
+      "ThePrimeagen/git-worktree.nvim",
+    },
+    config = function() require("config.telescope") end,
+  },
+  {
+    "folke/todo-comments.nvim",
+    event        = "BufReadPost",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config       = function() require("config.todo-comments") end,
+  },
 
--- LaTeX
-Plug('lervag/vimtex')
+  -- ── LSP ───────────────────────────────────────────────────────────────
+  {
+    "neovim/nvim-lspconfig",
+    event        = { "BufReadPre", "BufNewFile" },
+    dependencies = { "hrsh7th/cmp-nvim-lsp" },
+    config       = function() require("config.lsp") end,
+  },
 
--- Syntax
-Plug('nvim-treesitter/nvim-treesitter', { ['do'] = ':TSUpdate' })
-Plug('lukas-reineke/indent-blankline.nvim')
+  -- ── Completion ────────────────────────────────────────────────────────
+  {
+    "hrsh7th/nvim-cmp",
+    event  = { "InsertEnter", "CmdlineEnter" },
+    dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-buffer",
+      "hrsh7th/cmp-path",
+      "hrsh7th/cmp-cmdline",
+      "hrsh7th/cmp-vsnip",
+      "hrsh7th/vim-vsnip",
+    },
+    config = function() require("config.cmp") end,
+  },
 
--- Programming 
-Plug ('wakatime/vim-wakatime')
+  -- ── Git ───────────────────────────────────────────────────────────────
+  {
+    "lewis6991/gitsigns.nvim",
+    event  = "BufReadPost",
+    config = function() require("config.gitsigns") end,
+  },
+  {
+    "TimUntersberger/neogit",
+    cmd          = "Neogit",
+    keys         = { { "<leader>gg", "<cmd>Neogit<CR>", desc = "Open Neogit" } },
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config       = function() require("config.neogit") end,
+  },
 
-vim.call('plug#end')
+  -- ── DAP ───────────────────────────────────────────────────────────────
+  {
+    "mfussenegger/nvim-dap",
+    keys = { "<F5>", "<F10>", "<F11>", "<F12>", "<F3>", "<Leader>B" },
+    dependencies = {
+      "nvim-neotest/nvim-nio",
+      "rcarriga/nvim-dap-ui",
+      "theHamsta/nvim-dap-virtual-text",
+    },
+    config = function() require("config.dap") end,
+  },
+
+  -- ── LaTeX ─────────────────────────────────────────────────────────────
+  {
+    "lervag/vimtex",
+    ft     = "tex",
+    config = function() require("config.vimtex") end,
+  },
+
+  -- ── Treesitter ────────────────────────────────────────────────────────
+  {
+    "nvim-treesitter/nvim-treesitter",
+    event  = { "BufReadPost", "BufNewFile" },
+    build  = ":TSUpdate",
+    config = function() require("config.treesitter") end,
+  },
+
+  -- ── Misc ──────────────────────────────────────────────────────────────
+  { "wakatime/vim-wakatime", event = "VeryLazy" },
+})

@@ -22,7 +22,7 @@ require("gitsigns").setup({
 
         -- Navigation
         map('n', '<leader>hn', gs.next_hunk,           { buffer = bufnr })
-        map('n', '<leader>hp', gs.prev_hunk,           { buffer = bufnr })
+        map('n', '<leader>hN', gs.prev_hunk,           { buffer = bufnr })
     end,
 })
 

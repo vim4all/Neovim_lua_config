@@ -75,12 +75,38 @@ require("lazy").setup({
     config       = function() require("config.todo-comments") end,
   },
 
+  -- ── Mason ─────────────────────────────────────────────────────────────
+  { "williamboman/mason.nvim",           lazy = true },
+  { "williamboman/mason-lspconfig.nvim", lazy = true },
+
   -- ── LSP ───────────────────────────────────────────────────────────────
   {
     "neovim/nvim-lspconfig",
     event        = { "BufReadPre", "BufNewFile" },
-    dependencies = { "hrsh7th/cmp-nvim-lsp" },
-    config       = function() require("config.lsp") end,
+    dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
+      "williamboman/mason.nvim",
+      "williamboman/mason-lspconfig.nvim",
+    },
+    config = function()
+      require("config.mason")
+      require("config.lsp")
+    end,
+  },
+
+  -- ── Formatting ────────────────────────────────────────────────────────
+  {
+    "stevearc/conform.nvim",
+    event  = "BufWritePre",
+    cmd    = "ConformInfo",
+    config = function() require("config.conform") end,
+  },
+
+  -- ── Linting ───────────────────────────────────────────────────────────
+  {
+    "mfussenegger/nvim-lint",
+    event  = { "BufReadPost", "BufWritePost" },
+    config = function() require("config.lint") end,
   },
 
   -- ── Completion ────────────────────────────────────────────────────────
@@ -94,8 +120,19 @@ require("lazy").setup({
       "hrsh7th/cmp-cmdline",
       "hrsh7th/cmp-vsnip",
       "hrsh7th/vim-vsnip",
+      "windwp/nvim-autopairs",
     },
-    config = function() require("config.cmp") end,
+    config = function()
+      require("config.cmp")
+      require("config.autopairs")
+    end,
+  },
+
+  -- ── Editing ───────────────────────────────────────────────────────────
+  {
+    "numToStr/Comment.nvim",
+    keys   = { { "gc", mode = { "n", "v" } }, { "gb", mode = { "n", "v" } } },
+    config = function() require("config.comment") end,
   },
 
   -- ── Git ───────────────────────────────────────────────────────────────

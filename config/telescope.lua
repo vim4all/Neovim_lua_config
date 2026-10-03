@@ -43,6 +43,7 @@ telescope.setup({
 
 pcall(telescope.load_extension, "fzf")
 pcall(telescope.load_extension, "git_worktree")
+pcall(telescope.load_extension, "file_browser")
 
 -- keymaps
 local map = vim.keymap.set

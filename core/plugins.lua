@@ -47,7 +47,6 @@ require("lazy").setup({
     event  = "BufReadPost",
     config = function() require("config.indent") end,
   },
-
   -- ── File tree ─────────────────────────────────────────────────────────
   {
     "nvim-tree/nvim-tree.lua",
@@ -59,7 +58,14 @@ require("lazy").setup({
   -- ── Telescope ─────────────────────────────────────────────────────────
   {
     "nvim-telescope/telescope.nvim",
-    event  = "VeryLazy",
+    cmd  = "Telescope",
+    keys = {
+      "<Leader>ff", "<Leader>fg", "<Leader>fb", "<Leader>fh",
+      "<Leader>fo", "<Leader>fe", "<Leader>fr", "<Leader>fs",
+      "<Leader>fc", "<Leader>sw",
+      "<Leader>gf", "<Leader>gb", "<Leader>gc",
+      "<Leader>gw", "<Leader>gW",
+    },
     dependencies = {
       "nvim-lua/plenary.nvim",
       { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
@@ -75,9 +81,16 @@ require("lazy").setup({
     config       = function() require("config.todo-comments") end,
   },
 
+  -- ── Flash ─────────────────────────────────────────────────────────────
+  {
+    "folke/flash.nvim",
+    event  = "VeryLazy",
+    config = function() require("config.flash") end,
+  },
+
   -- ── Mason ─────────────────────────────────────────────────────────────
-  { "williamboman/mason.nvim",           lazy = true },
-  { "williamboman/mason-lspconfig.nvim", lazy = true },
+  { "mason-org/mason.nvim",           lazy = true },
+  { "mason-org/mason-lspconfig.nvim", lazy = true },
 
   -- ── LSP ───────────────────────────────────────────────────────────────
   {
@@ -85,8 +98,8 @@ require("lazy").setup({
     event        = { "BufReadPre", "BufNewFile" },
     dependencies = {
       "hrsh7th/cmp-nvim-lsp",
-      "williamboman/mason.nvim",
-      "williamboman/mason-lspconfig.nvim",
+      "mason-org/mason.nvim",
+      "mason-org/mason-lspconfig.nvim",
     },
     config = function()
       require("config.mason")
@@ -97,8 +110,24 @@ require("lazy").setup({
   -- ── Formatting ────────────────────────────────────────────────────────
   {
     "stevearc/conform.nvim",
-    event  = "BufWritePre",
     cmd    = "ConformInfo",
+    keys   = {
+      {
+        "<leader>cf",
+        function() require("conform").format({ async = true, lsp_format = "fallback" }) end,
+        mode = { "n", "v" },
+        desc = "Format buffer",
+      },
+    },
+    init   = function()
+      -- `=` uses clang-format with the same style resolution as conform
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern  = { "c", "cpp" },
+        callback = function(args)
+          vim.opt_local.equalprg = "clang-format " .. require("config.clang_style").arg(args.buf)
+        end,
+      })
+    end,
     config = function() require("config.conform") end,
   },
 
@@ -118,21 +147,12 @@ require("lazy").setup({
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
       "hrsh7th/cmp-cmdline",
-      "hrsh7th/cmp-vsnip",
-      "hrsh7th/vim-vsnip",
       "windwp/nvim-autopairs",
     },
     config = function()
       require("config.cmp")
       require("config.autopairs")
     end,
-  },
-
-  -- ── Editing ───────────────────────────────────────────────────────────
-  {
-    "numToStr/Comment.nvim",
-    keys   = { { "gc", mode = { "n", "v" } }, { "gb", mode = { "n", "v" } } },
-    config = function() require("config.comment") end,
   },
 
   -- ── Git ───────────────────────────────────────────────────────────────
@@ -142,7 +162,13 @@ require("lazy").setup({
     config = function() require("config.gitsigns") end,
   },
   {
-    "TimUntersberger/neogit",
+    "sindrets/diffview.nvim",
+    cmd    = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
+    keys   = { { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diffview open" } },
+    config = function() require("config.diffview") end,
+  },
+  {
+    "NeogitOrg/neogit",
     cmd          = "Neogit",
     keys         = { { "<leader>gg", "<cmd>Neogit<CR>", desc = "Open Neogit" } },
     dependencies = { "nvim-lua/plenary.nvim" },
@@ -152,7 +178,20 @@ require("lazy").setup({
   -- ── DAP ───────────────────────────────────────────────────────────────
   {
     "mfussenegger/nvim-dap",
-    keys = { "<F5>", "<F10>", "<F11>", "<F12>", "<F3>", "<Leader>B" },
+    keys = {
+      { "<leader>dc", function() require("dap").continue() end,          desc = "DAP continue / start" },
+      { "<leader>ds", function() require("dap").step_over() end,         desc = "DAP step over" },
+      { "<leader>dw", function() require("dap").step_into() end,         desc = "DAP step into" },
+      { "<leader>de", function() require("dap").step_out() end,          desc = "DAP step out" },
+      { "<leader>db", function() require("dap").toggle_breakpoint() end, desc = "DAP toggle breakpoint" },
+      { "<leader>dC", function() require("dap").run_to_cursor() end,     desc = "DAP run to cursor" },
+      { "<leader>dr", function() require("dap").repl.open() end,         desc = "DAP REPL" },
+      { "<leader>dl", function() require("dap").run_last() end,          desc = "DAP run last" },
+      { "<leader>dq", function() require("dap").terminate() end,         desc = "DAP terminate" },
+      { "<leader>du", function() require("dapui").toggle() end,          desc = "DAP toggle UI" },
+      { "<leader>dh", function() require("dap.ui.widgets").hover() end,  desc = "DAP inspect value", mode = { "n", "v" } },
+      { "<Leader>B",  function() require("dap").set_breakpoint(vim.fn.input("Condition: ")) end, desc = "DAP conditional breakpoint" },
+    },
     dependencies = {
       "nvim-neotest/nvim-nio",
       "rcarriga/nvim-dap-ui",
@@ -178,4 +217,11 @@ require("lazy").setup({
 
   -- ── Misc ──────────────────────────────────────────────────────────────
   { "wakatime/vim-wakatime", event = "VeryLazy" },
+}, {
+  performance = {
+    rtp = {
+      -- lazy resets the rtp; keep the distro's bundled treesitter parsers (lua, c, vim, ...)
+      paths = { "/usr/lib/x86_64-linux-gnu/nvim" },
+    },
+  },
 })

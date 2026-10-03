@@ -1,5 +1,5 @@
 require("mason").setup()
 
 require("mason-lspconfig").setup({
-  ensure_installed = { "lua_ls", "pyright", "clangd" },
+  ensure_installed = { "lua_ls", "pyright", "clangd", "bashls", "neocmake" },
 })

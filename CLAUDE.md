@@ -49,8 +49,10 @@ Plugins use these triggers in `core/plugins.lua`:
 | `<leader>g*` | Git (neogit, gitsigns operations) |
 | `<leader>h*` | Git hunks (stage, undo, reset, preview, blame) |
 | `<leader>l*` | LaTeX (VimTeX) |
-| `<leader>rn` / `<leader>ca` | LSP rename / code action |
+| `<leader>rn` / `<leader>ca` | LSP rename / code action (also built-in `grn`/`gra`/`grr`/`gri`) |
+| `<leader>cf` / `<leader>cd` / `<leader>ch` | Format / line diagnostics / clangd source↔header |
 | `<A-,>` / `<A-.>` / `<A-1-9>` | Barbar buffer navigation |
-| `F5–F12`, `F3` | DAP step/continue/breakpoint |
+| `<leader>d*`, `<leader>B` | DAP (`dc` continue, `ds`/`dw`/`de` step over/into/out, `db` breakpoint, `dC` run to cursor, `du` UI, `dh` inspect, `dq` terminate) — keys declared in `core/plugins.lua` |
+| `F5` (per project) | Build & flash via project `.nvim.lua` (`exrc`) |
 | `<C-h/j/k/l>` | Window navigation |
 | `<leader>w/q` | Save / quit |

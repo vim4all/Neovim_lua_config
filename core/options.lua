@@ -22,4 +22,7 @@ vim.g.loaded_node_provider = 0
 vim.opt.colorcolumn = "80"
 vim.opt.wrap = false
 vim.opt.cursorline = true
+vim.opt.signcolumn = "yes"
+
+vim.opt.exrc = true
 

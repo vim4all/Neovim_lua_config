@@ -1,9 +1,14 @@
-local ok, ts_configs = pcall(require, "nvim-treesitter")
+-- New nvim-treesitter API: setup only accepts { install_dir }
+-- Highlighting and indent are handled by neovim's built-in treesitter integration
+require("nvim-treesitter").setup()
 
-ts_configs.setup({
-    ensure_installed = { "python", "lua", "c", "markdown", "vim" }, -- languages
-    highlight = { enable = true },     -- enable syntax highlighting
-    indent = { enable = true },        -- enable smart indentation
-    auto_install = true,               -- automatically install missing parsers
+vim.api.nvim_create_autocmd("FileType", {
+  callback = function(args)
+    local ft = vim.bo[args.buf].filetype
+    if ft == "" then return end
+    local ok, parser = pcall(vim.treesitter.language.inspect, ft)
+    if ok and parser then
+      pcall(vim.treesitter.start, args.buf)
+    end
+  end,
 })
-

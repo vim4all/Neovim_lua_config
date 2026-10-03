@@ -1,98 +1,154 @@
 local dap_ok, dap = pcall(require, "dap")
 if not dap_ok then return end
 
+-- GDB >= 14 is required for --interpreter=dap (/usr/bin/gdb is 12.1)
+local GDB = "/usr/local/bin/gdb"
+
 -- ================================
 -- Python Adapter
 -- ================================
+local function python_path()
+    local venv = os.getenv("VIRTUAL_ENV")
+    if venv then return venv .. "/bin/python" end
+    for _, dir in ipairs({ ".venv", "venv" }) do
+        local p = vim.fn.getcwd() .. "/" .. dir .. "/bin/python"
+        if vim.fn.executable(p) == 1 then return p end
+    end
+    return "python3"
+end
+
 dap.adapters.python = {
-  type = "executable",
-  command = "python3",
-  args = { "-m", "debugpy.adapter" },
+    type = "executable",
+    command = "python3",
+    args = { "-m", "debugpy.adapter" },
 }
 
 dap.configurations.python = {
     {
-        type = 'python',
-        request = 'launch',
-        name = 'Launch file',
-        program = '${file}',
-        console = 'integratedTerminal',
-        pythonPath = function() return vim.g.python3_host_prog end,
-    },
-    {
-        type = 'python',
-        request = 'launch',
-        name = 'Launch module',
-        module = '${fileBasenameNoExtension}',
-        console = 'integratedTerminal',
-        pythonPath = function() return vim.g.python3_host_prog end,
-    },
-}
-
--- ================================
--- C++ Adapter (local GDB)
--- ================================
-dap.adapters.cpp = {
-    type = 'executable',
-    command = '/usr/bin/gdb', -- your local gdb path
-    name = 'gdb'
-}
-
-dap.configurations.cpp = {
-    {
-        name = "(gdb) Launch MY",
-        type = "cpp",
+        type = "python",
         request = "launch",
-        program = vim.fn.getcwd() .. "/out/build/debug-x86/ecs-02-gui",
-        cwd = vim.fn.getcwd() .. "/deb-package/opt/arex/ecs-02-gui",
-        args = {},
-        stopAtEntry = false,
-        setupCommands = {
-            {
-                text = "-enable-pretty-printing",
-                description = "Enable pretty-printing for gdb",
-                ignoreFailures = true,
-            },
-            {
-                text = "set breakpoint pending on",
-                description = "Allow pending breakpoints",
-                ignoreFailures = true,
-            },
-        },
+        name = "Launch file",
+        program = "${file}",
+        console = "integratedTerminal",
+        pythonPath = python_path,
+    },
+    {
+        type = "python",
+        request = "launch",
+        name = "Launch module",
+        module = "${fileBasenameNoExtension}",
+        console = "integratedTerminal",
+        pythonPath = python_path,
     },
 }
 
-
-dap.adapters.cppdbg = {
-  type = "executable",
-  command = "/usr/bin/gdb",
-  args = { "--interpreter=dap" },
+-- ================================
+-- C++ Adapter (host GDB, native DAP mode)
+-- ================================
+dap.adapters.gdb = {
+    type = "executable",
+    command = GDB,
+    args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
 }
+
+local function split_args(prompt)
+    return vim.split(vim.fn.input(prompt), " ", { trimempty = true })
+end
+
+-- EVerest: out-of-tree build in ~/wrk_dir/build (see build/run-scripts/*.sh)
+local everest_src  = vim.fn.expand("~/wrk_dir/EVerest")
+local everest_dist = vim.fn.expand("~/wrk_dir/build/dist")
 
 dap.configurations.cpp = {
-  {
-    name = "(gdb) Launch",
-    type = "cppdbg",
-    request = "launch",
-    program = function()
-      return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/out/build/debug-x86/ecs-02-gui", "file")
-    end,
-    cwd = vim.fn.expand("${workspaceFolder}/deb-package/opt/arex/ecs-02-gui"),
-    stopAtEntry = false,
-  },
+    {
+        name = "Launch executable",
+        type = "gdb",
+        request = "launch",
+        program = function()
+            return vim.fn.input("Executable: ", vim.fn.getcwd() .. "/build/", "file")
+        end,
+        args = function() return split_args("Args: ") end,
+        cwd = "${workspaceFolder}",
+        stopAtBeginningOfMainSubprogram = false,
+    },
+    {
+        -- EVerest modules run as child processes of `manager`: start it
+        -- normally (or via the config below) and attach to the module here.
+        name = "Attach to process",
+        type = "gdb",
+        request = "attach",
+        pid = function() return require("dap.utils").pick_process() end,
+        cwd = "${workspaceFolder}",
+    },
+    {
+        name = "EVerest manager",
+        type = "gdb",
+        request = "launch",
+        program = everest_dist .. "/bin/manager",
+        args = function()
+            local conf = vim.fn.input("Config: ", everest_src .. "/config/", "file")
+            return { "--prefix", everest_dist, "--conf", conf }
+        end,
+        env = { LD_LIBRARY_PATH = everest_dist .. "/lib" },
+        cwd = everest_dist,
+    },
 }
 
+-- ================================
+-- STM32 / Cortex-M Adapter (GDB + OpenOCD, via ~/.local/bin/gdb-openocd)
+-- ================================
+dap.adapters.cortex_m = function(callback, config)
+    callback({
+        type = "executable",
+        command = vim.fn.expand("~/.local/bin/gdb-openocd"),
+        args = { config.program },
+        options = { initialize_timeout_sec = 30 },
+    })
+end
 
-dap.configurations.c = dap.configurations.cpp
+local function pick_elf()
+    local candidates = {}
+    -- ESP-IDF layout: build/<project>.elf directly (no Debug/Release subdir).
+    vim.list_extend(candidates, vim.fn.glob(vim.fn.getcwd() .. "/build/*.elf", false, true))
+    for _, build_type in ipairs({ "Debug", "Release" }) do
+        local matches = vim.fn.glob(vim.fn.getcwd() .. "/build/" .. build_type .. "/*.elf", false, true)
+        vim.list_extend(candidates, matches)
+    end
+    if #candidates == 0 then
+        return vim.fn.input("ELF: ", vim.fn.getcwd() .. "/build/Debug/", "file")
+    elseif #candidates == 1 then
+        return candidates[1]
+    end
+    local labels = { "Select ELF:" }
+    for i, f in ipairs(candidates) do
+        labels[#labels + 1] = i .. ") " .. vim.fn.fnamemodify(f, ":~:.")
+    end
+    local idx = vim.fn.inputlist(labels)
+    return (idx >= 1 and idx <= #candidates) and candidates[idx] or candidates[1]
+end
+
+dap.configurations.c = {
+    {
+        name = "STM32 Debug (OpenOCD)",
+        type = "cortex_m",
+        request = "attach",
+        target = "localhost:3333",
+        program = pick_elf,
+        cwd = "${workspaceFolder}",
+    },
+}
+dap.configurations.asm = dap.configurations.c
 
 -- ================================
 -- Sign Icons
 -- ================================
-vim.fn.sign_define('DapBreakpoint',{ text ='🟥', texthl ='', linehl ='', numhl =''})
-vim.fn.sign_define('DapStopped',{ text ='▶️', texthl ='', linehl ='', numhl =''})
+vim.fn.sign_define("DapBreakpoint",          { text = "●", texthl = "DiagnosticError" })
+vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DiagnosticWarn" })
+vim.fn.sign_define("DapBreakpointRejected",  { text = "○", texthl = "DiagnosticHint" })
+vim.fn.sign_define("DapStopped",             { text = "▶", texthl = "DiagnosticOk", linehl = "Visual" })
 
 -- ================================
--- DAP UI
+-- DAP UI + virtual text
 -- ================================
 local dapui_ok, dapui = pcall(require, "dapui")
 if dapui_ok then
@@ -107,22 +163,7 @@ if dapui_ok then
     end
 end
 
--- ================================
--- DAP Keymaps
--- ================================
-local keymaps = {
-    F5  = dap.continue,
-    F10 = dap.step_over,
-    F11 = dap.step_into,
-    F12 = dap.step_out,
-    F3  = dap.toggle_breakpoint,
-}
+local vt_ok, vt = pcall(require, "nvim-dap-virtual-text")
+if vt_ok then vt.setup() end
 
-for k, fn in pairs(keymaps) do
-    vim.keymap.set('n', '<'..k..'>', fn)
-end
-
-vim.keymap.set('n', '<Leader>B', function()
-    dap.set_breakpoint(vim.fn.input('Condition: '))
-end)
-
+-- Keymaps are declared in core/plugins.lua (`keys`) so any of them lazy-loads DAP.

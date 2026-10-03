@@ -1,166 +1,254 @@
 # Neovim Lua Configuration
 
-A modular, plugin-focused Neovim configuration written fully in **Lua**.  This
-setup provides modern UI enhancements, LSP support, Git integration,
-Treesitter, debugging, file tree navigation, and more. This README describes
-the **exact structure and plugins included** in this repository.
+A modular Neovim configuration written entirely in Lua and managed with
+[lazy.nvim](https://github.com/folke/lazy.nvim). It is tuned for C/C++
+(host and embedded: STM32, ESP32), Python and LaTeX work, with native LSP,
+debugging through DAP, and a full Git workflow.
 
 ![screenshot](images/preview.png)
 
 ---
 
-## Directory Structure
+## Features
+
+- **Fast startup** – every plugin is lazy-loaded on an event, command, filetype or key.
+- **Native LSP** – uses the Neovim 0.11+ `vim.lsp.config()` / `vim.lsp.enable()` APIs;
+  servers are installed automatically by Mason.
+- **Embedded-aware C/C++** – clangd is allowed to query the `arm-none-eabi` and
+  `xtensa-esp*-elf` toolchains, so cross-compiled projects resolve their system headers.
+- **Debugging** – nvim-dap with GDB's built-in DAP mode for host C++, OpenOCD for
+  Cortex-M / ESP32 targets, and debugpy for Python.
+- **Formatting that respects the project** – clang-format uses a project's
+  `.clang-format` when present and falls back to LLVM + Allman braces otherwise.
+- **Per-project settings** – `exrc` is enabled, so a trusted `.nvim.lua` in a
+  project root can add build commands or debug targets.
+
+---
+
+## Requirements
+
+| Tool | Needed for |
+|------|------------|
+| Neovim **0.11+** | Native LSP config API |
+| `git`, `make`, a C compiler | lazy.nvim, telescope-fzf-native, Treesitter parsers |
+| `ripgrep` (`rg`) | Telescope live grep |
+| `node` / `npm` | Mason installs of `pyright`, `bash-language-server` |
+| GDB **14+** | C/C++ debugging (`--interpreter=dap`) — configured as `/usr/local/bin/gdb` |
+| `python3 -m pip install debugpy` | Python debugging |
+| `openocd`, `~/.local/bin/gdb-openocd` | STM32 / ESP32 on-target debugging |
+| `stylua`, `black`, `clang-format`, `flake8` | Formatting and linting |
+| A [Nerd Font](https://www.nerdfonts.com/) | Icons |
+
+## Installation
+
+```sh
+# Back up any existing config first
+mv ~/.config/nvim ~/.config/nvim.bak
+
+git clone https://github.com/vim4all/Neovim_lua_config ~/.config/nvim
+nvim   # lazy.nvim bootstraps itself and installs all plugins
+```
+
+On first launch Mason installs the language servers listed in `config/mason.lua`.
+Run `:checkhealth` afterwards to confirm everything is in place.
+
+---
+
+## Structure
 
 ```
 nvim/
-│
-├── init.lua
-├─+ core/
-│ ├── keymaps.lua
-│ ├── options.lua
-│ └── plugins.lua
-└─+ config/
-  ├── autopairs.lua
-  ├── barbar.lua
-  ├── catppuccin.lua
-  ├── cmp.lua
-  ├── comment.lua
-  ├── conform.lua
-  ├── dap.lua
-  ├── gitsigns.lua
-  ├── indent.lua
-  ├── lint.lua
-  ├── lsp.lua
-  ├── lualine.lua
-  ├── mason.lua
-  ├── neogit.lua
-  ├── nvim-tree.lua
-  ├── telescope.lua
-  ├── todo-comments.lua
-  ├── treesitter.lua
-  ├── vimtex.lua
-  └── whichkey.lua
+├── init.lua              Entry point: leader keys, loads core/*
+├── core/
+│   ├── options.lua       Editor options
+│   ├── keymaps.lua       Global keymaps
+│   └── plugins.lua       lazy.nvim bootstrap + plugin specs and load triggers
+└── config/               One file per plugin, each with its setup() and keymaps
+    ├── autopairs.lua     Auto-close brackets, integrated with nvim-cmp
+    ├── barbar.lua        Buffer tabline and buffer navigation
+    ├── catppuccin.lua    Colorscheme
+    ├── clang_style.lua   clang-format style resolution (shared by conform and `=`)
+    ├── cmp.lua           Completion: LSP, buffer, path, cmdline
+    ├── conform.lua       Formatters
+    ├── dap.lua           Debug adapters and launch configurations
+    ├── diffview.lua      Diff viewer and file history
+    ├── flash.lua         Label-based jumps
+    ├── gitsigns.lua      Git signs and hunk actions
+    ├── indent.lua        Indentation guides
+    ├── lint.lua          Linters
+    ├── lsp.lua           LSP servers, diagnostics and on-attach keymaps
+    ├── lualine.lua       Statusline
+    ├── mason.lua         Mason + automatic server installation
+    ├── neogit.lua        Magit-style Git UI
+    ├── nvim-tree.lua     File explorer
+    ├── telescope.lua     Fuzzy finder and extensions
+    ├── todo-comments.lua TODO/FIXME highlighting
+    ├── treesitter.lua    Treesitter highlighting
+    ├── vimtex.lua        LaTeX
+    └── whichkey.lua      Keymap hints
 ```
 
-### **`init.lua`**
-Main entry point — sets leader keys and loads core modules and plugin configs.
+---
 
-### **`core/`**
-Basic editor configuration:
-- **options.lua** — Neovim settings (indentation, UI, behavior)
-- **keymaps.lua** — all keybindings
-- **plugins.lua** — lazy.nvim plugin list + setup
+## Plugins
 
-### **`config/`**
-Each plugin has its own standalone configuration module:
-- **autopairs.lua** — Auto-close brackets/quotes with cmp integration
-- **barbar.lua** — Buffer tabline with navigation keymaps
-- **catppuccin.lua** — Catppuccin theme setup
-- **cmp.lua** — Autocompletion (nvim-cmp + sources + vsnip)
-- **comment.lua** — `gcc`/`gc` comment toggling
-- **conform.lua** — Formatter runner (stylua, black, clang-format); `<leader>cf` to format
-- **dap.lua** — Debug Adapter Protocol configuration
-- **gitsigns.lua** — Git change indicators and hunk keymaps
-- **indent.lua** — Indentation guides
-- **lint.lua** — Linter runner (flake8, etc.) triggered on save
-- **lsp.lua** — LSP server configs (`lua_ls`, `pyright`, `clangd`) and keymaps
-- **lualine.lua** — Statusline
-- **mason.lua** — Mason installer + mason-lspconfig (ensures servers are installed)
-- **neogit.lua** — Neogit Git UI
-- **nvim-tree.lua** — File explorer
-- **telescope.lua** — Fuzzy finder + extensions
-- **todo-comments.lua** — Highlighted TODO/FIXME comments
-- **treesitter.lua** — Treesitter syntax + highlighting
-- **vimtex.lua** — LaTeX support
-- **whichkey.lua** — Keymap helper popup
+| Area | Plugins |
+|------|---------|
+| UI | catppuccin, lualine.nvim, barbar.nvim, which-key.nvim, indent-blankline.nvim, nvim-web-devicons |
+| Navigation | telescope.nvim (+ fzf-native, file-browser, git-worktree), nvim-tree.lua, flash.nvim |
+| LSP | nvim-lspconfig, mason.nvim, mason-lspconfig.nvim |
+| Completion | nvim-cmp, cmp-nvim-lsp, cmp-buffer, cmp-path, cmp-cmdline, nvim-autopairs |
+| Format / Lint | conform.nvim, nvim-lint |
+| Syntax | nvim-treesitter, todo-comments.nvim |
+| Git | gitsigns.nvim, neogit, diffview.nvim |
+| Debugging | nvim-dap, nvim-dap-ui, nvim-dap-virtual-text, nvim-nio |
+| LaTeX | vimtex |
+| Misc | vim-wakatime |
+
+Commenting uses Neovim's built-in `gc` / `gcc`, and snippets use the built-in `vim.snippet`.
 
 ---
 
-## Included Plugins
+## Language Support
 
-### **UI / Appearance**
-- **Catppuccin** — modern color theme
-- **Lualine** — customizable statusline
-- **nvim-web-devicons** — file type icons
-- **Barbar.nvim** — buffer tabline with navigation
+| Language | LSP | Formatter | Linter | Debugger |
+|----------|-----|-----------|--------|----------|
+| C / C++ | clangd | clang-format | clang-tidy (via clangd) | GDB (host), GDB + OpenOCD (target) |
+| Python | pyright | black | flake8 | debugpy |
+| Lua | lua_ls | stylua | — | — |
+| Shell | bashls | — | — | — |
+| CMake | neocmake | — | — | — |
+| LaTeX | — (VimTeX) | — | — | — |
 
-### **Navigation / Fuzzy Finding**
-- **Telescope.nvim** — fuzzy finder for files, commands, LSP, etc.
-- **telescope-fzf-native.nvim** — native fzf sorter for Telescope
-- **telescope-file-browser.nvim** — file browser extension for Telescope
-- **nvim-tree.lua** — sidebar file explorer
+### clangd and compile_commands.json
 
-### **Editor Enhancements**
-- **Treesitter** — syntax tree parsing, highlighting, folding
-- **Indent-blankline** — indentation guides
-- **Which-key** — displays available keybindings
-- **todo-comments.nvim** — highlighted TODO/FIXME/NOTE comments
+clangd looks for `compile_commands.json` in the source tree and in `build/`.
+If your build directory is elsewhere (for example `build/Debug/`, or an
+out-of-tree build), add a `.clangd` file to the project root:
 
-### **LSP / Completion**
-- **mason.nvim** — installs and manages LSP servers, formatters, linters
-- **mason-lspconfig.nvim** — bridges mason with nvim-lspconfig
-- **nvim-lspconfig** — LSP server configurations (`lua_ls`, `pyright`, `clangd`)
-- **nvim-cmp** — autocompletion engine
-- **cmp-nvim-lsp** — LSP source for nvim-cmp
-- **cmp-buffer** — buffer words source
-- **cmp-path** — filesystem path source
-- **cmp-cmdline** — command-line completion
-- **vim-vsnip** / **cmp-vsnip** — snippet engine and source
-- **Wakatime** — programming time tracker
+```yaml
+CompileFlags:
+  CompilationDatabase: build/Debug
+```
 
-### **Formatting / Linting**
-- **conform.nvim** — formatter runner; format on save + `<leader>cf`
-- **nvim-lint** — linter runner triggered on save and buffer read
+For ESP-IDF projects, also remove GCC-only flags that clangd rejects:
 
-### **Editing**
-- **nvim-autopairs** — auto-close brackets and quotes, integrated with nvim-cmp
-- **Comment.nvim** — `gcc` (line) / `gc` (motion/visual) comment toggling
-
-### **Debugging**
-- **nvim-dap** — Debug Adapter Protocol client
-- **nvim-dap-ui** — UI for nvim-dap
-- **nvim-dap-virtual-text** — virtual text for DAP
-
-### **Git Integration**
-- **Gitsigns.nvim** — diff signs and inline git info
-- **Neogit** — Magit-like Git UI
-- **git-worktree.nvim** — Git worktree management
-
-### **LaTeX**
-- **VimTeX** — full LaTeX editing environment
+```yaml
+CompileFlags:
+  Remove: [-mlongcalls, -fstrict-volatile-bitfields, -fno-tree-switch-conversion]
+```
 
 ---
 
-## Keymap Layout
+## Debugging
 
-| Prefix | Domain |
-|--------|--------|
-| `<leader>f*` | Telescope find (files, grep, buffers, todo) |
-| `<leader>g*` | Git (neogit, gitsigns operations) |
-| `<leader>h*` | Git hunks (stage, undo, reset, preview, blame) |
-| `<leader>l*` | LaTeX (VimTeX) |
-| `<leader>cf` | Format buffer (conform) |
-| `<leader>rn` / `<leader>ca` | LSP rename / code action |
-| `<A-,>` / `<A-.>` / `<A-1-9>` | Barbar buffer navigation |
-| `F5–F12`, `F3` | DAP step/continue/breakpoint |
-| `<C-h/j/k/l>` | Window navigation |
-| `<leader>w/q` | Save / quit |
+Start a session with `<leader>dc`; the DAP UI opens and closes automatically.
+
+| Filetype | Configuration | Notes |
+|----------|---------------|-------|
+| C++ | **Launch executable** | Prompts for the binary and its arguments |
+| C++ | **Attach to process** | Pick a running PID — useful for multi-process apps such as EVerest modules |
+| C++ | **EVerest manager** | Launches `~/wrk_dir/build/dist/bin/manager` with a chosen config `.yaml` |
+| C / asm | **STM32 Debug (OpenOCD)** | Attaches to OpenOCD on `localhost:3333`; finds the ELF under `build/`, `build/Debug/` or `build/Release/` |
+| Python | **Launch file / module** | Uses `$VIRTUAL_ENV`, `.venv/` or `venv/` when present |
+
+For on-target debugging, start OpenOCD first (e.g. the project's `run_openocd.sh`).
+A project can override or add configurations in its own `.nvim.lua`.
+
+---
+
+## Keymaps
+
+Leader is `<Space>`. Press `<leader>` and wait to see every mapping in which-key.
+
+### General
+
+| Key | Action |
+|-----|--------|
+| `<leader>w` / `<leader>q` | Save / quit |
+| `<leader><Space>` | Clear search highlight |
+| `<C-h/j/k/l>` | Move between windows |
+| `<leader>e` | Toggle file tree |
+| `s` / `S` | Flash jump / Treesitter jump |
+
+### Find (Telescope)
+
+| Key | Action |
+|-----|--------|
+| `<leader>ff` / `<leader>fg` | Find files / live grep |
+| `<leader>fb` / `<leader>fo` | Buffers / recent files |
+| `<leader>fh` / `<leader>fe` | Help tags / file browser |
+| `<leader>fr` / `<leader>fs` | LSP references / document symbols |
+| `<leader>ft` / `<leader>sw` | TODO comments / grep word under cursor |
+
+### LSP and Formatting
+
+| Key | Action |
+|-----|--------|
+| `gd` / `gD` | Go to definition / declaration |
+| `K` | Hover documentation |
+| `grr` / `gri` | References / implementation (Neovim built-in) |
+| `<leader>rn` / `<leader>ca` | Rename / code action |
+| `<leader>cd` | Line diagnostics |
+| `<leader>ch` | Switch source / header (clangd) |
+| `<leader>cf` | Format buffer or selection |
+
+### Debugging
+
+| Key | Action |
+|-----|--------|
+| `<leader>dc` | Continue / start session |
+| `<leader>ds` / `<leader>dw` / `<leader>de` | Step over / into / out |
+| `<leader>db` / `<leader>B` | Toggle breakpoint / conditional breakpoint |
+| `<leader>dC` | Run to cursor |
+| `<leader>dh` | Inspect value under cursor |
+| `<leader>du` / `<leader>dr` | Toggle DAP UI / open REPL |
+| `<leader>dl` / `<leader>dq` | Re-run last / terminate |
+
+### Git
+
+| Key | Action |
+|-----|--------|
+| `<leader>gg` | Neogit |
+| `<leader>gd` / `<leader>gD` | Diffview open / close |
+| `<leader>gh` / `<leader>gH` | File history (current file / branch) |
+| `<leader>gf` / `<leader>gb` / `<leader>gc` | Git files / branches / commits |
+| `<leader>gw` / `<leader>gW` | Switch / create worktree |
+| `<leader>hs` / `<leader>hu` / `<leader>hr` | Stage / undo stage / reset hunk |
+| `<leader>hp` / `<leader>hb` | Preview hunk / toggle line blame |
+| `<leader>hn` / `<leader>hN` | Next / previous hunk |
+
+### Buffers (Barbar)
+
+| Key | Action |
+|-----|--------|
+| `<A-,>` / `<A-.>` | Previous / next buffer |
+| `<A-1>` … `<A-9>` / `<A-0>` | Go to buffer N / last buffer |
+| `<A-c>` / `<A-p>` | Close / pin buffer |
+| `<C-p>` | Pick buffer |
+
+### LaTeX (VimTeX)
+
+| Key | Action |
+|-----|--------|
+| `<leader>l*` | VimTeX commands (compile, view, ...) |
+| `<leader>lb` | Bold word / selection |
+| `<leader>lh` | Highlight word / selection in red |
 
 ---
 
 ## Customization
 
-Add plugins → `core/plugins.lua`
+| To change | Edit |
+|-----------|------|
+| Add or remove a plugin | `core/plugins.lua` (spec) + `config/<plugin>.lua` (setup) |
+| Editor options | `core/options.lua` |
+| Global keymaps | `core/keymaps.lua` |
+| Language servers | `config/lsp.lua` and `config/mason.lua` |
+| Debug targets | `config/dap.lua`, or a project's `.nvim.lua` |
 
-Modify options → `core/options.lua`
-
-Change keymaps → `core/keymaps.lua`
-
-Edit individual plugin settings → `config/*.lua`
-
-The design is fully modular — each plugin lives in its own file.
+Each plugin lives in its own file, so plugins can be added or removed independently.
 
 ## Contributing
 
-Pull requests and suggestions are welcome.
-This config aims to stay modular, clean, and easy to extend.
+Issues and pull requests are welcome.

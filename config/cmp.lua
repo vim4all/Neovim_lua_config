@@ -3,7 +3,7 @@ local cmp = require('cmp')
 cmp.setup({
   snippet = {
     expand = function(args)
-      vim.fn["vsnip#anonymous"](args.body)
+      vim.snippet.expand(args.body)
     end,
   },
 
@@ -18,10 +18,16 @@ cmp.setup({
   }),
 
   sources = cmp.config.sources({
-    { name = 'nvim_lsp' },
-    { name = 'vsnip' },
+    { name = 'nvim_lsp', max_item_count = 20 },
   }, {
-    { name = 'buffer' },
+    { name = 'buffer', max_item_count = 10, keyword_length = 3,
+      option = { get_bufnrs = function()
+        local buf = vim.api.nvim_get_current_buf()
+        local byte_size = vim.api.nvim_buf_get_offset(buf, vim.api.nvim_buf_line_count(buf))
+        if byte_size > 512 * 1024 then return {} end
+        return { buf }
+      end }
+    },
     { name = 'path' },
   }),
 })

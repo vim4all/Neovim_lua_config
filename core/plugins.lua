@@ -164,7 +164,12 @@ require("lazy").setup({
   {
     "sindrets/diffview.nvim",
     cmd    = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
-    keys   = { { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diffview open" } },
+    keys   = {
+      { "<leader>gd", "<cmd>DiffviewOpen<CR>",          desc = "Diffview open" },
+      { "<leader>gD", "<cmd>DiffviewClose<CR>",         desc = "Diffview close" },
+      { "<leader>gh", "<cmd>DiffviewFileHistory %<CR>", desc = "File history (current)" },
+      { "<leader>gH", "<cmd>DiffviewFileHistory<CR>",   desc = "Branch history" },
+    },
     config = function() require("config.diffview") end,
   },
   {

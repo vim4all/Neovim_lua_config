@@ -140,6 +140,58 @@ dap.configurations.c = {
 dap.configurations.asm = dap.configurations.c
 
 -- ================================
+-- TI C2000 / C28x Adapter (TI debug server, via the project's tools/c2000-dap)
+-- ================================
+-- GDB/OpenOCD can't debug a C28x. A project that ships tools/c2000-dap (a DAP server on
+-- TI's Python scripting API, e.g. DCR_C2000_Converter) gets these configurations; the
+-- first connect takes ~40 s while the debug server configures the target.
+local c2000_dap = vim.fn.getcwd() .. "/tools/c2000-dap"
+if vim.fn.executable(c2000_dap) == 1 then
+    dap.adapters.c2000 = {
+        type = "executable",
+        command = c2000_dap,
+        options = { initialize_timeout_sec = 60 },
+    }
+
+    local function pick_out()
+        local outs = vim.fn.glob(vim.fn.getcwd() .. "/build/*/*.out", false, true)
+        if #outs == 1 then return outs[1] end
+        local labels = { "Select .out:" }
+        for i, f in ipairs(outs) do labels[#labels + 1] = i .. ") " .. vim.fn.fnamemodify(f, ":~:.") end
+        local idx = vim.fn.inputlist(labels)
+        return outs[idx] or vim.fn.input(".out: ", vim.fn.getcwd() .. "/build/Debug/", "file")
+    end
+    local function pick_ccxml()
+        local files = vim.fn.glob(vim.fn.getcwd() .. "/targetConfigs/*.ccxml", false, true)
+        return files[1] or vim.fn.input("ccxml: ", vim.fn.getcwd() .. "/", "file")
+    end
+
+    local c2000 = {
+        {
+            name = "C2000: flash and debug (run to main)",
+            type = "c2000",
+            request = "launch",
+            program = pick_out,
+            ccxml = pick_ccxml,
+            core = "C28xx_CPU1",
+            cwd = "${workspaceFolder}",
+        },
+        {
+            name = "C2000: attach (symbols only, halt)",
+            type = "c2000",
+            request = "attach",
+            program = pick_out,
+            ccxml = pick_ccxml,
+            core = "C28xx_CPU1",
+            cwd = "${workspaceFolder}",
+        },
+    }
+    -- In a C2000 project these come first, ahead of the Cortex-M entries.
+    dap.configurations.c = vim.list_extend(vim.deepcopy(c2000), dap.configurations.c)
+    dap.configurations.asm = dap.configurations.c
+end
+
+-- ================================
 -- Sign Icons
 -- ================================
 vim.fn.sign_define("DapBreakpoint",          { text = "●", texthl = "DiagnosticError" })

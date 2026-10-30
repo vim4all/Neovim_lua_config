@@ -47,6 +47,24 @@ require("lazy").setup({
     event  = "BufReadPost",
     config = function() require("config.indent") end,
   },
+
+  -- ── tmux navigation ───────────────────────────────────────────────────
+  -- Alt+h/j/k/l and Alt+arrows move across nvim splits and tmux panes alike
+  -- (tmux side: ~/.tmux.conf "Pane navigation")
+  {
+    "christoomey/vim-tmux-navigator",
+    init = function() vim.g.tmux_navigator_no_mappings = 1 end,
+    keys = {
+      { "<M-h>",     "<cmd>TmuxNavigateLeft<CR>",  desc = "Pane left" },
+      { "<M-j>",     "<cmd>TmuxNavigateDown<CR>",  desc = "Pane down" },
+      { "<M-k>",     "<cmd>TmuxNavigateUp<CR>",    desc = "Pane up" },
+      { "<M-l>",     "<cmd>TmuxNavigateRight<CR>", desc = "Pane right" },
+      { "<M-Left>",  "<cmd>TmuxNavigateLeft<CR>",  desc = "Pane left" },
+      { "<M-Down>",  "<cmd>TmuxNavigateDown<CR>",  desc = "Pane down" },
+      { "<M-Up>",    "<cmd>TmuxNavigateUp<CR>",    desc = "Pane up" },
+      { "<M-Right>", "<cmd>TmuxNavigateRight<CR>", desc = "Pane right" },
+    },
+  },
   -- ── File tree ─────────────────────────────────────────────────────────
   {
     "nvim-tree/nvim-tree.lua",

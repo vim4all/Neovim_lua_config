@@ -49,20 +49,17 @@ require("lazy").setup({
   },
 
   -- ── tmux navigation ───────────────────────────────────────────────────
-  -- Alt+h/j/k/l and Alt+arrows move across nvim splits and tmux panes alike
-  -- (tmux side: ~/.tmux.conf "Pane navigation")
+  -- Ctrl+h/j/k/l move across nvim splits and tmux panes alike (tmux side:
+  -- ~/.tmux.conf "Pane navigation"). Not Alt: Alt/Option is the window
+  -- manager's on Linux (i3), Windows (GlazeWM) and macOS (AeroSpace).
   {
     "christoomey/vim-tmux-navigator",
     init = function() vim.g.tmux_navigator_no_mappings = 1 end,
     keys = {
-      { "<M-h>",     "<cmd>TmuxNavigateLeft<CR>",  desc = "Pane left" },
-      { "<M-j>",     "<cmd>TmuxNavigateDown<CR>",  desc = "Pane down" },
-      { "<M-k>",     "<cmd>TmuxNavigateUp<CR>",    desc = "Pane up" },
-      { "<M-l>",     "<cmd>TmuxNavigateRight<CR>", desc = "Pane right" },
-      { "<M-Left>",  "<cmd>TmuxNavigateLeft<CR>",  desc = "Pane left" },
-      { "<M-Down>",  "<cmd>TmuxNavigateDown<CR>",  desc = "Pane down" },
-      { "<M-Up>",    "<cmd>TmuxNavigateUp<CR>",    desc = "Pane up" },
-      { "<M-Right>", "<cmd>TmuxNavigateRight<CR>", desc = "Pane right" },
+      { "<C-h>", "<cmd>TmuxNavigateLeft<CR>",  desc = "Pane left" },
+      { "<C-j>", "<cmd>TmuxNavigateDown<CR>",  desc = "Pane down" },
+      { "<C-k>", "<cmd>TmuxNavigateUp<CR>",    desc = "Pane up" },
+      { "<C-l>", "<cmd>TmuxNavigateRight<CR>", desc = "Pane right" },
     },
   },
   -- ── File tree ─────────────────────────────────────────────────────────

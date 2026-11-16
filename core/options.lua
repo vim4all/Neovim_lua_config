@@ -26,3 +26,16 @@ vim.opt.signcolumn = "yes"
 
 vim.opt.exrc = true
 
+
+-- Reload files changed outside nvim (Claude, git checkout) when nvim gets focus
+-- back or you switch buffers. A buffer with unsaved edits is never replaced:
+-- nvim warns instead. FocusGained needs tmux's focus-events (on in .tmux.conf).
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "TermLeave" }, {
+    group = vim.api.nvim_create_augroup("autoread_checktime", { clear = true }),
+    callback = function()
+        if vim.fn.mode() ~= "c" and vim.fn.getcmdwintype() == "" then
+            vim.cmd("silent! checktime")
+        end
+    end,
+})
